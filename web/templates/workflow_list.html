@@ -1,0 +1,56 @@
+{{define "title"}}Workflows - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="page-header">
+    <h1>Workflows</h1>
+    <p>All deployed workflow definitions</p>
+</div>
+
+<div class="card">
+    {{if .Data.Workflows}}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Workflow ID</th>
+                    <th>Description</th>
+                    <th>Revision</th>
+                    <th>Executions</th>
+                    <th>Active</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Data.Workflows}}
+                <tr>
+                    <td><a href="/ui/workflows/{{.ID}}" class="wf-link">{{.ID}}</a></td>
+                    <td>{{if .Description}}{{truncate .Description 50}}{{else}}<span style="color: var(--text-muted);">—</span>{{end}}</td>
+                    <td class="td-mono">{{.RevisionID}}</td>
+                    <td class="td-mono">{{.ExecutionCount}}</td>
+                    <td>
+                        {{if gt .ActiveCount 0}}
+                        <span class="state state-active"><span class="state-icon">&#9654;</span> {{.ActiveCount}}</span>
+                        {{else}}
+                        <span style="color: var(--text-muted);">0</span>
+                        {{end}}
+                    </td>
+                    <td class="td-mono">{{timeAgo .CreateTime}}</td>
+                    <td class="td-mono">{{timeAgo .UpdateTime}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="empty">
+        <div class="empty-icon">&#9881;</div>
+        <h3>No workflows deployed</h3>
+        <p>Deploy a workflow using the API:<br>
+        <code style="color: var(--accent); font-size: 12px;">POST /v1/projects/{{.Project}}/locations/{{.Location}}/workflows?workflowId=my-workflow</code></p>
+    </div>
+    {{end}}
+</div>
+
+{{template "foot" .}}

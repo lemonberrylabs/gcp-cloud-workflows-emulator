@@ -1,0 +1,20 @@
+main:
+  steps:
+    - init:
+        assign:
+          - my_list: [1, 2, 3]
+          - my_map:
+              a: 1
+              b: 2
+    - compute:
+        assign:
+          - in_list: ${2 in my_list}
+          - not_in_list: ${4 in my_list}
+          - in_map: ${"a" in my_map}
+          - not_in_map: ${"c" in my_map}
+    - done:
+        return:
+          in_list: ${in_list}
+          not_in_list: ${not_in_list}
+          in_map: ${in_map}
+          not_in_map: ${not_in_map}

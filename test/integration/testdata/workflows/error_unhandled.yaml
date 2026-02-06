@@ -1,0 +1,6 @@
+main:
+  steps:
+    - fail:
+        raise:
+          code: 500
+          message: "unhandled error"

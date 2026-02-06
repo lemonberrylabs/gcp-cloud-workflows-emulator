@@ -1,0 +1,29 @@
+[book]
+title = "GCP Cloud Workflows Emulator"
+authors = ["The GCW Emulator Authors"]
+description = "Documentation for the GCP Cloud Workflows Emulator -- a local emulator for developing and testing Google Cloud Workflows without deploying to GCP."
+language = "en"
+multilingual = false
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "ayu"
+git-repository-url = "https://github.com/lemonberrylabs/gcp-cloud-workflows-emulator"
+edit-url-template = "https://github.com/lemonberrylabs/gcp-cloud-workflows-emulator/edit/main/docs/{path}"
+no-section-label = false
+additional-css = []
+additional-js = []
+
+[output.html.search]
+enable = true
+limit-results = 20
+use-hierarchical-headings = true
+
+[output.html.fold]
+enable = false
+level = 0

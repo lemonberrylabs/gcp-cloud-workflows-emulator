@@ -1,0 +1,19 @@
+main:
+  steps:
+    - init:
+        assign:
+          - data:
+              a: 1
+              b: 2
+              c: 3
+          - sum: 0
+    - loop:
+        for:
+          value: k
+          in: ${keys(data)}
+          steps:
+            - add:
+                assign:
+                  - sum: ${sum + data[k]}
+    - done:
+        return: ${sum}

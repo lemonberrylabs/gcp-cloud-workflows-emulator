@@ -1,0 +1,18 @@
+main:
+  steps:
+    - compute:
+        assign:
+          - and_true: ${true and true}
+          - and_false: ${true and false}
+          - or_true: ${false or true}
+          - or_false: ${false or false}
+          - not_true: ${not false}
+          - not_false: ${not true}
+    - done:
+        return:
+          and_true: ${and_true}
+          and_false: ${and_false}
+          or_true: ${or_true}
+          or_false: ${or_false}
+          not_true: ${not_true}
+          not_false: ${not_false}

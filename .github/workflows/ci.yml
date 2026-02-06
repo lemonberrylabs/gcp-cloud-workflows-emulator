@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Unit Tests
+        run: go test ./pkg/... -count=1 -timeout 60s
+
+      - name: Start Emulator
+        run: |
+          PORT=8787 go run ./cmd/emulator/ &
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null http://localhost:8787/; then
+              echo "Emulator ready"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Integration Tests
+        env:
+          WORKFLOWS_EMULATOR_HOST: localhost:8787
+        run: go test ./test/integration/ -count=1 -timeout 120s -v

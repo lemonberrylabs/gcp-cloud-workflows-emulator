@@ -1,0 +1,8 @@
+main:
+  steps:
+    - init:
+        assign:
+          - greeting: "Hello"
+          - name: "World"
+    - done:
+        return: ${greeting + ", " + name + "!"}

@@ -1,0 +1,44 @@
+# Binaries
+bin/
+emulator
+gcw-emulator
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test output
+*.test
+*.out
+coverage.txt
+coverage.html
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+
+# Environment / secrets
+.env
+.env.local
+*.pem
+*.key
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Temporary / scratch
+tmp/

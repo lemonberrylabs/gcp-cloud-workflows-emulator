@@ -1,0 +1,18 @@
+main:
+  steps:
+    - try_step:
+        try:
+          steps:
+            - fail:
+                raise:
+                  code: 404
+                  message: "not found"
+                  tags: ["NotFound", "HttpError"]
+        except:
+          as: e
+          steps:
+            - handle:
+                return:
+                  code: ${e.code}
+                  message: ${e.message}
+                  tags: ${e.tags}

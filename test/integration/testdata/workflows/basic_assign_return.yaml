@@ -1,0 +1,7 @@
+main:
+  steps:
+    - init:
+        assign:
+          - x: 42
+    - done:
+        return: ${x}

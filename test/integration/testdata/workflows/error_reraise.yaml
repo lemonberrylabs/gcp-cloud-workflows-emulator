@@ -1,0 +1,24 @@
+main:
+  steps:
+    - outer_try:
+        try:
+          steps:
+            - inner_try:
+                try:
+                  steps:
+                    - fail:
+                        raise:
+                          code: 42
+                          message: "inner error"
+                except:
+                  as: e
+                  steps:
+                    - reraise:
+                        raise: ${e}
+        except:
+          as: e
+          steps:
+            - handle:
+                return:
+                  code: ${e.code}
+                  message: ${e.message}

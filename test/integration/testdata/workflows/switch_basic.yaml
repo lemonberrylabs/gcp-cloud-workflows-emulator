@@ -1,0 +1,18 @@
+main:
+  steps:
+    - init:
+        assign:
+          - x: 50
+    - check:
+        switch:
+          - condition: ${x < 10}
+            assign:
+              - result: "small"
+          - condition: ${x < 100}
+            assign:
+              - result: "medium"
+          - condition: true
+            assign:
+              - result: "large"
+    - done:
+        return: ${result}

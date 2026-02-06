@@ -1,0 +1,26 @@
+main:
+  steps:
+    - call_outer:
+        call: outer
+        args:
+          x: 5
+        result: val
+    - done:
+        return: ${val}
+
+outer:
+  params: [x]
+  steps:
+    - call_inner:
+        call: inner
+        args:
+          y: ${x * 2}
+        result: result
+    - done:
+        return: ${result + 1}
+
+inner:
+  params: [y]
+  steps:
+    - compute:
+        return: ${y + 10}

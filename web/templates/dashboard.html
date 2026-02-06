@@ -1,0 +1,105 @@
+{{define "title"}}Dashboard - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="page-header">
+    <h1>Dashboard</h1>
+    <p>Google Cloud Workflows Emulator overview</p>
+</div>
+
+<div class="stats">
+    <div class="stat">
+        <div class="stat-label">Workflows</div>
+        <div class="stat-value blue">{{len .Data.Workflows}}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Active</div>
+        <div class="stat-value yellow">{{.Data.ActiveCount}}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Succeeded</div>
+        <div class="stat-value green">{{.Data.SucceededCount}}</div>
+    </div>
+    <div class="stat">
+        <div class="stat-label">Failed</div>
+        <div class="stat-value red">{{.Data.FailedCount}}</div>
+    </div>
+</div>
+
+<div class="grid-2">
+    <div class="section">
+        <div class="card">
+            <div class="card-header">
+                <h2>Deployed Workflows</h2>
+                <span class="badge">{{len .Data.Workflows}}</span>
+            </div>
+            {{if .Data.Workflows}}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Workflow</th>
+                            <th>Updated</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Data.Workflows}}
+                        <tr>
+                            <td><a href="/ui/workflows/{{workflowID .Name}}" class="wf-link">{{workflowID .Name}}</a></td>
+                            <td class="td-mono">{{timeAgo .UpdateTime}}</td>
+                            <td><span class="state state-succeeded"><span class="state-icon">&#10003;</span> {{.State}}</span></td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="empty">
+                <div class="empty-icon">&#9881;</div>
+                <h3>No workflows deployed</h3>
+                <p>Deploy a workflow via the API or use --workflows-dir</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="card">
+            <div class="card-header">
+                <h2>Recent Executions</h2>
+                <span class="badge">{{len .Data.RecentExecs}}</span>
+            </div>
+            {{if .Data.RecentExecs}}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Execution</th>
+                            <th>Workflow</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Data.RecentExecs}}
+                        <tr>
+                            <td><a href="/ui/executions/{{.WorkflowID}}/{{.ExecID}}" class="wf-link">{{.ExecID}}</a></td>
+                            <td><a href="/ui/workflows/{{.WorkflowID}}">{{.WorkflowID}}</a></td>
+                            <td><span class="state {{stateClass (printf "%s" .State)}}"><span class="state-icon">{{stateIcon (printf "%s" .State)}}</span> {{.State}}</span></td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+            {{else}}
+            <div class="empty">
+                <div class="empty-icon">&#9654;</div>
+                <h3>No executions yet</h3>
+                <p>Trigger an execution from a workflow detail page</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+{{template "foot" .}}

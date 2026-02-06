@@ -1,0 +1,18 @@
+main:
+  steps:
+    - compute:
+        assign:
+          - add: ${10 + 3}
+          - sub: ${10 - 3}
+          - mul: ${10 * 3}
+          - div: ${10 / 3}
+          - mod: ${10 % 3}
+          - intdiv: ${10 // 3}
+    - done:
+        return:
+          add: ${add}
+          sub: ${sub}
+          mul: ${mul}
+          div: ${div}
+          mod: ${mod}
+          intdiv: ${intdiv}

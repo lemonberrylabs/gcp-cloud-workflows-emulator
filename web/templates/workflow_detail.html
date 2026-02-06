@@ -1,0 +1,173 @@
+{{define "title"}}{{.Data.ID}} - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="breadcrumb">
+    <a href="/ui">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="/ui/workflows">Workflows</a>
+    <span class="sep">/</span>
+    <span style="color: var(--text);">{{.Data.ID}}</span>
+</div>
+
+<div class="page-header" style="display: flex; align-items: flex-start; justify-content: space-between;">
+    <div>
+        <h1>{{.Data.ID}}</h1>
+        <p>{{if .Data.Workflow.Description}}{{.Data.Workflow.Description}}{{else}}Workflow definition{{end}}</p>
+    </div>
+    <button class="btn btn-primary" onclick="showTriggerForm()">Trigger Execution</button>
+</div>
+
+<div id="trigger-form" class="card section" style="display: none;">
+    <div class="card-header">
+        <h2>Trigger New Execution</h2>
+        <button class="btn btn-ghost" onclick="hideTriggerForm()" style="font-size: 16px; padding: 4px 8px;">&#10005;</button>
+    </div>
+    <div class="card-body">
+        <form id="exec-form" onsubmit="return triggerExecution(event)">
+            <div class="form-group">
+                <label>Arguments (JSON)</label>
+                <textarea id="exec-args" rows="4" placeholder='{"key": "value"}'></textarea>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="btn btn-primary">Execute</button>
+                <button type="button" class="btn btn-ghost" onclick="hideTriggerForm()">Cancel</button>
+            </div>
+            <div id="exec-result" style="margin-top: 12px; display: none;"></div>
+        </form>
+    </div>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Details</h2>
+        </div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-label">Name</div>
+                <div class="detail-value mono">{{.Data.Workflow.Name}}</div>
+                <div class="detail-label">State</div>
+                <div class="detail-value"><span class="state state-succeeded"><span class="state-icon">&#10003;</span> {{.Data.Workflow.State}}</span></div>
+                <div class="detail-label">Revision</div>
+                <div class="detail-value mono">{{.Data.Workflow.RevisionID}}</div>
+                <div class="detail-label">Created</div>
+                <div class="detail-value">{{formatTime .Data.Workflow.CreateTime}}</div>
+                <div class="detail-label">Updated</div>
+                <div class="detail-value">{{formatTime .Data.Workflow.UpdateTime}}</div>
+                <div class="detail-label">Source Lines</div>
+                <div class="detail-value">{{countLines .Data.Workflow.SourceCode}} lines</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Source</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="code-block" style="border: none; border-radius: 0; margin: 0;">{{.Data.Workflow.SourceCode}}</div>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Executions</h2>
+            <span class="badge">{{len .Data.Executions}}</span>
+        </div>
+        {{if .Data.Executions}}
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Execution ID</th>
+                        <th>State</th>
+                        <th>Started</th>
+                        <th>Duration</th>
+                        <th>Revision</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Data.Executions}}
+                    <tr>
+                        <td><a href="/ui/executions/{{.WorkflowID}}/{{.ExecID}}" class="wf-link">{{.ExecID}}</a></td>
+                        <td><span class="state {{stateClass (printf "%s" .State)}}"><span class="state-icon">{{stateIcon (printf "%s" .State)}}</span> {{.State}}</span></td>
+                        <td class="td-mono">{{timeAgo .StartTime}}</td>
+                        <td class="td-mono">{{duration .StartTime .EndTime}}</td>
+                        <td class="td-mono">{{.WorkflowRevisionID}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <div class="empty">
+            <div class="empty-icon">&#9654;</div>
+            <h3>No executions yet</h3>
+            <p>Click "Trigger Execution" to run this workflow</p>
+        </div>
+        {{end}}
+    </div>
+</div>
+
+<script>
+function showTriggerForm() {
+    document.getElementById('trigger-form').style.display = 'block';
+    document.getElementById('exec-args').focus();
+}
+
+function hideTriggerForm() {
+    document.getElementById('trigger-form').style.display = 'none';
+    document.getElementById('exec-result').style.display = 'none';
+}
+
+function triggerExecution(e) {
+    e.preventDefault();
+    var args = document.getElementById('exec-args').value.trim();
+    var resultDiv = document.getElementById('exec-result');
+
+    var body = {};
+    if (args) {
+        try {
+            JSON.parse(args);
+            body.argument = args;
+        } catch(err) {
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Invalid JSON: ' + err.message;
+            resultDiv.style.color = 'var(--red)';
+            return false;
+        }
+    }
+
+    var url = '/v1/projects/{{.Project}}/locations/{{.Location}}/workflows/{{.Data.ID}}/executions';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(body)
+    })
+    .then(function(resp) { return resp.json(); })
+    .then(function(data) {
+        if (data.error) {
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = 'Error: ' + data.error.message;
+            resultDiv.style.color = 'var(--red)';
+        } else {
+            window.location.reload();
+        }
+    })
+    .catch(function(err) {
+        resultDiv.style.display = 'block';
+        resultDiv.textContent = 'Request failed: ' + err.message;
+        resultDiv.style.color = 'var(--red)';
+    });
+
+    return false;
+}
+</script>
+
+{{template "foot" .}}

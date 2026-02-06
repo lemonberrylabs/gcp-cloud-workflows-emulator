@@ -1,0 +1,23 @@
+services:
+  emulator:
+    build: .
+    ports:
+      - "8787:8787"
+      - "8788:8788"
+    environment:
+      PORT: "8787"
+      GRPC_PORT: "8788"
+      PROJECT: "my-project"
+      LOCATION: "us-central1"
+    volumes:
+      - ./workflows:/workflows
+    depends_on:
+      - backend
+
+  # Example backend service that workflows can call via http.get/http.post.
+  # Replace with your own service or remove if not needed.
+  backend:
+    image: hashicorp/http-echo
+    command: ["-text", '{"status":"ok"}', "-listen", ":5678"]
+    ports:
+      - "5678:5678"

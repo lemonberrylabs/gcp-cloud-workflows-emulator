@@ -1,0 +1,24 @@
+main:
+  steps:
+    - init:
+        assign:
+          - result_a: ""
+          - result_b: ""
+    - parallel_step:
+        parallel:
+          shared: [result_a, result_b]
+          branches:
+            - branch_a:
+                steps:
+                  - set_a:
+                      assign:
+                        - result_a: "from_a"
+            - branch_b:
+                steps:
+                  - set_b:
+                      assign:
+                        - result_b: "from_b"
+    - done:
+        return:
+          a: ${result_a}
+          b: ${result_b}

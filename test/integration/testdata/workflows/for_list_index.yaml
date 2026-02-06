@@ -1,0 +1,17 @@
+main:
+  steps:
+    - init:
+        assign:
+          - items: ["a", "b", "c"]
+          - result: []
+    - loop:
+        for:
+          value: v
+          index: i
+          in: ${items}
+          steps:
+            - collect:
+                assign:
+                  - result: ${list.concat(result, [string(i) + ":" + v])}
+    - done:
+        return: ${result}

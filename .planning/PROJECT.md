@@ -60,11 +60,13 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 - [ ] Parallel nesting depth limit: 2
 
 #### Error Handling
-- [ ] Error map structure: `{message, code, tags}`
-- [ ] All error types: HttpError, ConnectionError, TimeoutError, TypeError, ValueError, KeyError, IndexError, ZeroDivisionError, RecursionError, ResourceLimitError, MemoryLimitExceededError, ResultSizeLimitExceededError, AuthenticationError
-- [ ] Multi-tag error support
+- [ ] Error map structure: `{message, code, tags}` (HTTP errors also include `headers`, `body`)
+- [ ] All error types (OFFICIAL 17 tags): AuthError, ConnectionError, ConnectionFailedError, HttpError, IndexError, KeyError, OperationError, ParallelNestingError, RecursionError, ResourceLimitError, ResponseTypeError, SystemError, TimeoutError, TypeError, UnhandledBranchError, ValueError, ZeroDivisionError
+- [ ] **ConnectionFailedError vs ConnectionError distinction**: ConnectionFailedError = connection never established (service down, DNS fail, connection refused); ConnectionError = connection broke mid-transfer. Critical for localhost dev.
+- [ ] Multi-tag error support (e.g., HttpError + status-specific tags)
 - [ ] Retry with exponential backoff (initial_delay, max_delay, multiplier)
 - [ ] Custom retry predicates (subworkflow-based)
+- [ ] Retry re-executes ENTIRE try block, not just the failed step
 
 #### REST API (Workflows)
 - [ ] `POST /v1/{parent}/workflows` — Create workflow (returns Operation)
@@ -83,6 +85,20 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 - [ ] `GET /v1/{parent}/callbacks` — List callbacks
 - [ ] `POST {callback_url}` — Send callback to waiting execution
 
+#### gRPC API (Workflows Service — from googleapis proto)
+- [ ] `ListWorkflows` — List workflows in project/location
+- [ ] `GetWorkflow` — Get workflow details
+- [ ] `CreateWorkflow` — Create workflow (returns Operation)
+- [ ] `DeleteWorkflow` — Delete workflow (returns Operation)
+- [ ] `UpdateWorkflow` — Update workflow (returns Operation)
+- [ ] `ListWorkflowRevisions` — List workflow revision history
+
+#### gRPC API (Executions Service — from googleapis proto)
+- [ ] `ListExecutions` — List executions for a workflow
+- [ ] `CreateExecution` — Start a new execution
+- [ ] `GetExecution` — Get execution details
+- [ ] `CancelExecution` — Cancel a running execution
+
 #### Limits Enforcement
 - [ ] 50 assignments per assign step
 - [ ] 50 conditions per switch
@@ -96,11 +112,31 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 - [ ] 400 character max expression length
 - [ ] 100,000 max steps per execution
 
-#### Developer Experience
+#### Developer Experience (Drop-in Replacement)
+- [ ] **Watched workflows directory**: `gcw-emulator --workflows-dir=./workflows --port=8080` — emulator watches a directory for `.yaml`/`.json` workflow files. Each file is parsed and "deployed" as a workflow. The directory can be the actual source directory or a dedicated watched folder.
+- [ ] **Hot-reload on file change**: When workflow files in the watched directory are added, modified, or deleted, the emulator automatically re-deploys the affected workflow. File name (without extension) becomes the workflow ID. Workflow ID rules: lowercase letters, digits, hyphens, underscores; must start with a letter; max 128 chars. Invalid filenames are skipped with a warning.
+- [ ] **API-only mode**: If `--workflows-dir` is not provided, emulator starts with zero workflows and only accepts deployments via the Workflows CRUD API. Useful for programmatic test setups via the Go test helper.
+- [ ] **In-flight execution isolation**: When a workflow file changes, currently running executions continue using the workflow definition they started with. Only NEW executions use the updated definition. This matches real GCW revision semantics.
+- [ ] **Workflow steps invoke localhost endpoints**: When the workflow engine encounters `call: http.*` steps, it makes real HTTP calls to localhost services. Developers run their services locally (e.g., on different ports) and the workflow orchestrates them, just like real GCW orchestrates Cloud Run / Cloud Functions.
+- [ ] **Trigger execution via API**: `POST /v1/{parent}/executions` starts the loaded workflow — same as real GCW Executions API
+- [ ] `WORKFLOWS_EMULATOR_HOST` env var support (follows Google convention: `PUBSUB_EMULATOR_HOST`, `FIRESTORE_EMULATOR_HOST`, etc.)
+- [ ] REST API paths match real GCP: `http://localhost:{port}/v1/projects/{project}/locations/{location}/workflows/...`
+- [ ] Go test helper package (`pkg/testutil/`): `emulator.New()`, `em.Start()`, `em.Stop()`, `em.DeployWorkflow()`, `em.ExecuteWorkflow()`
+- [ ] CLI flags: `--port`, `--project`, `--location`, `--workflows-dir` for emulator binary
 - [ ] Single binary / `go install` distribution
 - [ ] Docker image
-- [ ] Go test helper: `emulator.Start()` / `emulator.Stop()` for integration tests
-- [ ] Environment variable configuration for emulator settings
+- [ ] Clean separation between transport (HTTP handlers) and business logic (service layer) to enable future gRPC transport
+- [ ] No authentication required — emulator accepts all requests without credentials
+
+#### Web UI (Observability & CRUD)
+- [ ] **Dashboard**: Overview of deployed workflows and recent executions
+- [ ] **Workflow list**: View all deployed workflows with status, source file, last modified
+- [ ] **Workflow detail**: View workflow source (YAML), subworkflows, step structure
+- [ ] **Execution list**: View executions with state (ACTIVE, SUCCEEDED, FAILED, CANCELLED), start time, duration
+- [ ] **Execution detail**: View execution result/error, input arguments, current step (if active)
+- [ ] **CRUD operations**: Create/trigger executions, cancel running executions from the UI
+- [ ] **Built with Go templates** — server-rendered HTML, no separate frontend build step. Reference: `github.com/Maor.Bril/clauder` for Go + templates pattern.
+- [ ] **Served on same port** as the API (e.g., `http://localhost:8080/ui/`) or configurable `--ui-port`
 
 ### Out of Scope
 
@@ -108,7 +144,7 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 - **IAM / Authentication enforcement** — The emulator accepts all requests without auth checks.
 - **Billing / Quotas enforcement** — No billing simulation.
 - **Multi-region / Regional deployment semantics** — Single local instance.
-- **Cloud Console UI** — CLI/API only.
+- **Full Cloud Console UI clone** — We build a lightweight observability/CRUD web UI, not a full GCP Console replica.
 - **Eventarc / Pub/Sub triggers** — Executions are triggered via REST API only.
 - **Long-running Operation polling for workflow CRUD** — Create/Update/Delete return immediately in the emulator.
 - **CMEK (Customer-Managed Encryption Keys)** — Not relevant for local emulator.
@@ -122,8 +158,9 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 - Two REST APIs: Workflows API (CRUD for workflow definitions) and Executions API (run/monitor executions)
 - Existing emulators: None with full feature coverage — this fills a real gap in the GCP ecosystem
 - Similar projects: Firebase Emulator Suite (local emulators for Firestore, Auth, etc.) — this follows the same philosophy
-- **samber/ro** library provides reactive programming primitives in Go (observables, operators, subscriptions) — may be useful for building the parallel execution and event callback systems
+- **samber/ro** (https://ro.samber.dev) library provides reactive programming primitives in Go (observables, operators, subjects, subscriptions) — REQUIRED for building workflow execution primitives: parallel branch execution (observable per branch, Merge to combine), callback await (BehaviorSubject for callback events), execution state management (BehaviorSubject for state transitions), step pipeline (operators for step processing)
 - **Fiber** (gofiber.io) for the HTTP server exposing the REST API
+- **github.com/Maor.Bril/clauder** — reference for Go + HTML templates web UI pattern (user-provided example)
 
 ## Constraints
 
@@ -139,9 +176,18 @@ A full-featured, open-source Google Cloud Workflows emulator written in Go that 
 |----------|-----------|---------|
 | Go as implementation language | Performance, single binary, ecosystem fit for cloud tooling | — Pending |
 | Fiber for HTTP server | Fast, Express-like API, good for REST endpoint implementation | — Pending |
-| samber/ro for reactive primitives | Observable patterns useful for parallel execution and callbacks | — Pending |
+| ~~samber/ro~~ dropped | User decided plain Go goroutines + sync is fine. Common OSS libs OK. | Dropped |
 | Custom expression parser | GCW expression language is unique; no existing Go parser available | — Pending |
 | Emulate API surface, not internals | Match behavior, not implementation — simplifies architecture | — Pending |
+| REST + gRPC dual transport | Go client libraries use gRPC. Must support both REST (curl, non-Go) and gRPC (native Go/Python/Java clients). Proto definitions are small: 6 RPCs for Workflows, 4 for Executions. Use googleapis proto files directly. | — Pending |
+| Follow `*_EMULATOR_HOST` convention | All GCP emulators use `{SERVICE}_EMULATOR_HOST` env var. We use `WORKFLOWS_EMULATOR_HOST` for consistency. | — Pending |
+| Go test helper as primary DX | Most Go developers will use `emulator.New()` in tests, not raw HTTP. The test helper calls the service layer directly, no HTTP overhead. | — Pending |
+| Watched workflows directory (replaces single-file) | Instead of `--workflow=file.yaml`, the emulator watches an entire directory (`--workflows-dir=./workflows`). Each YAML/JSON file = one workflow. Files are hot-reloaded on change. This mirrors how Terraform manages workflow source as files on disk. "Deploying" = saving a file. | Decided |
+| In-flight execution isolation on redeploy | When a workflow file changes, running executions continue with their original definition. Only new executions pick up the change. Matches real GCW revision semantics where each execution is pinned to a revision. | Decided |
+| HTTP call steps hit localhost | Workflow `http.*` call steps make real HTTP requests to localhost endpoints. Developers run their services locally and the emulator orchestrates them, matching how real GCW calls Cloud Run/Functions. This is the core integration testing value prop. | Decided |
+| Execution triggered via API only | Workflow execution starts via `POST /v1/{parent}/executions` — same as real GCW. No auto-execute on startup. The emulator is a server waiting for API calls. | Decided |
+| Web UI for observability & CRUD | Lightweight server-rendered web UI (Go templates, no separate frontend). Shows deployed workflows, executions, results/errors. Allows triggering and cancelling executions. Served alongside the API. Reference: `github.com/Maor.Bril/clauder` for Go + templates pattern. | Decided |
+| Go templates for Web UI (no JS framework) | Keep everything in Go. Server-rendered HTML with Go `html/template`. No React/Vue/npm build step. Single binary includes all templates. Matches the "keep as much Go code as possible" constraint. | Decided |
 
 ---
-*Last updated: 2026-02-05 after initialization*
+*Last updated: 2026-02-05 — added: watched directory (replaces single-file), hot-reload with in-flight isolation, web UI with Go templates*

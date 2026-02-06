@@ -1,0 +1,15 @@
+main:
+  steps:
+    - init:
+        assign:
+          - sum: 0
+    - loop:
+        for:
+          value: v
+          range: [1, 5]
+          steps:
+            - add:
+                assign:
+                  - sum: ${sum + v}
+    - done:
+        return: ${sum}

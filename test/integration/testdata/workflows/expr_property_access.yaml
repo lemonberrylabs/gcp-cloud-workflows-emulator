@@ -1,0 +1,21 @@
+main:
+  steps:
+    - init:
+        assign:
+          - data:
+              name: "Alice"
+              address:
+                city: "Wonderland"
+              scores: [90, 85, 95]
+    - compute:
+        assign:
+          - dot_access: ${data.name}
+          - bracket_access: ${data["name"]}
+          - nested_dot: ${data.address.city}
+          - list_index: ${data.scores[1]}
+    - done:
+        return:
+          dot_access: ${dot_access}
+          bracket_access: ${bracket_access}
+          nested_dot: ${nested_dot}
+          list_index: ${list_index}

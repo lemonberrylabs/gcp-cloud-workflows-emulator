@@ -1,0 +1,24 @@
+main:
+  steps:
+    - call_factorial:
+        call: factorial
+        args:
+          n: 5
+        result: val
+    - done:
+        return: ${val}
+
+factorial:
+  params: [n]
+  steps:
+    - check:
+        switch:
+          - condition: ${n <= 1}
+            return: 1
+    - recurse:
+        call: factorial
+        args:
+          n: ${n - 1}
+        result: sub
+    - done:
+        return: ${n * sub}

@@ -1,0 +1,18 @@
+main:
+  steps:
+    - init:
+        assign:
+          - x: 42
+    - check:
+        switch:
+          - condition: ${x > 40}
+            steps:
+              - compute:
+                  assign:
+                    - result: ${x * 2}
+              - done:
+                  return: ${result}
+          - condition: true
+            steps:
+              - fallback:
+                  return: "default"

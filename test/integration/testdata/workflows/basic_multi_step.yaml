@@ -1,0 +1,13 @@
+main:
+  steps:
+    - step1:
+        assign:
+          - a: 10
+    - step2:
+        assign:
+          - b: 20
+    - step3:
+        assign:
+          - c: ${a + b}
+    - done:
+        return: ${c}

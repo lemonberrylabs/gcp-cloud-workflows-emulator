@@ -1,0 +1,23 @@
+main:
+  steps:
+    - try_step:
+        try:
+          steps:
+            - fail:
+                raise:
+                  code: 404
+                  message: "not found"
+                  tags: ["HttpError", "NotFound"]
+        except:
+          as: e
+          steps:
+            - check:
+                assign:
+                  - is_http: ${"HttpError" in e.tags}
+                  - is_not_found: ${"NotFound" in e.tags}
+                  - is_timeout: ${"TimeoutError" in e.tags}
+            - done:
+                return:
+                  is_http: ${is_http}
+                  is_not_found: ${is_not_found}
+                  is_timeout: ${is_timeout}

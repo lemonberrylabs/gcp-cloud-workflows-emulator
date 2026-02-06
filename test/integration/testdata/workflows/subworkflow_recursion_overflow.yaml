@@ -1,0 +1,20 @@
+main:
+  steps:
+    - call_deep:
+        call: recurse
+        args:
+          depth: 0
+        result: val
+    - done:
+        return: ${val}
+
+recurse:
+  params: [depth]
+  steps:
+    - go_deeper:
+        call: recurse
+        args:
+          depth: ${depth + 1}
+        result: val
+    - done:
+        return: ${val}

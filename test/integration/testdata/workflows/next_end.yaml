@@ -1,0 +1,11 @@
+main:
+  steps:
+    - step1:
+        assign:
+          - result: "only step1"
+        next: end
+    - step2:
+        assign:
+          - result: "should not reach"
+    - done:
+        return: ${result}

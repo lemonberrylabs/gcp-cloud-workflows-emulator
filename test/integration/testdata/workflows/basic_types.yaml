@@ -1,0 +1,21 @@
+main:
+  steps:
+    - init:
+        assign:
+          - my_int: 42
+          - my_double: 3.14
+          - my_string: "hello"
+          - my_bool: true
+          - my_null: null
+          - my_list: [1, 2, 3]
+          - my_map:
+              key: "value"
+    - done:
+        return:
+          int: ${my_int}
+          double: ${my_double}
+          string: ${my_string}
+          bool: ${my_bool}
+          "null": ${my_null}
+          list: ${my_list}
+          map: ${my_map}

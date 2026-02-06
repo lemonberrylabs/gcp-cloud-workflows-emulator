@@ -1,0 +1,123 @@
+{{define "title"}}{{.Data.ExecID}} - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="breadcrumb">
+    <a href="/ui">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="/ui/workflows">Workflows</a>
+    <span class="sep">/</span>
+    <a href="/ui/workflows/{{.Data.WorkflowID}}">{{.Data.WorkflowID}}</a>
+    <span class="sep">/</span>
+    <span style="color: var(--text);">{{.Data.ExecID}}</span>
+</div>
+
+<div class="page-header" style="display: flex; align-items: flex-start; justify-content: space-between;">
+    <div>
+        <h1>{{.Data.ExecID}}</h1>
+        <p>Execution of {{.Data.WorkflowID}}</p>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        {{if eq (printf "%s" .Data.Execution.State) "ACTIVE"}}
+        <button class="btn btn-danger" onclick="cancelExecution()">Cancel Execution</button>
+        {{end}}
+        <button class="btn btn-ghost" onclick="window.location.reload()">Refresh</button>
+    </div>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Details</h2>
+        </div>
+        <div class="card-body">
+            <div class="detail-grid">
+                <div class="detail-label">Name</div>
+                <div class="detail-value mono">{{.Data.Execution.Name}}</div>
+                <div class="detail-label">State</div>
+                <div class="detail-value"><span class="state {{stateClass (printf "%s" .Data.Execution.State)}}"><span class="state-icon">{{stateIcon (printf "%s" .Data.Execution.State)}}</span> {{.Data.Execution.State}}</span></div>
+                <div class="detail-label">Workflow</div>
+                <div class="detail-value"><a href="/ui/workflows/{{.Data.WorkflowID}}" class="wf-link">{{.Data.WorkflowID}}</a></div>
+                <div class="detail-label">Revision</div>
+                <div class="detail-value mono">{{.Data.Execution.WorkflowRevisionID}}</div>
+                <div class="detail-label">Started</div>
+                <div class="detail-value">{{formatTime .Data.Execution.StartTime}}</div>
+                {{if not .Data.Execution.EndTime.IsZero}}
+                <div class="detail-label">Ended</div>
+                <div class="detail-value">{{formatTime .Data.Execution.EndTime}}</div>
+                {{end}}
+                <div class="detail-label">Duration</div>
+                <div class="detail-value mono">{{duration .Data.Execution.StartTime .Data.Execution.EndTime}}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if .Data.Execution.Argument}}
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Arguments</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="code-block" style="border: none; border-radius: 0; margin: 0;">{{.Data.Execution.Argument}}</div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{if .Data.Execution.Result}}
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <h2>Result</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="code-block" style="border: none; border-radius: 0; margin: 0;">{{.Data.Execution.Result}}</div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{if .Data.Execution.Error}}
+<div class="section">
+    <div class="card" style="border-color: rgba(248, 113, 113, 0.3);">
+        <div class="card-header" style="border-color: rgba(248, 113, 113, 0.3);">
+            <h2 style="color: var(--red);">Error</h2>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="code-block" style="border: none; border-radius: 0; margin: 0; color: var(--red);">{{.Data.Execution.Error.Payload}}</div>
+        </div>
+        {{if .Data.Execution.Error.Context}}
+        <div class="card-body" style="border-top: 1px solid rgba(248, 113, 113, 0.3); padding-top: 12px;">
+            <div class="detail-grid">
+                <div class="detail-label">Context</div>
+                <div class="detail-value mono">{{.Data.Execution.Error.Context}}</div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}
+
+{{if eq (printf "%s" .Data.Execution.State) "ACTIVE"}}
+<script>
+setTimeout(function() { window.location.reload(); }, 2000);
+</script>
+{{end}}
+
+<script>
+function cancelExecution() {
+    var url = '/v1/projects/{{.Project}}/locations/{{.Location}}/workflows/{{.Data.WorkflowID}}/executions/{{.Data.ExecID}}:cancel';
+
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'}
+    })
+    .then(function() {
+        window.location.reload();
+    });
+}
+</script>
+
+{{template "foot" .}}

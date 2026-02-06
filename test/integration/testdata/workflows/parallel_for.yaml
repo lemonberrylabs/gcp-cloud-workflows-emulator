@@ -1,0 +1,18 @@
+main:
+  steps:
+    - init:
+        assign:
+          - items: [1, 2, 3, 4, 5]
+          - total: 0
+    - parallel_loop:
+        parallel:
+          shared: [total]
+          for:
+            value: item
+            in: ${items}
+            steps:
+              - add:
+                  assign:
+                    - total: ${total + item}
+    - done:
+        return: ${total}

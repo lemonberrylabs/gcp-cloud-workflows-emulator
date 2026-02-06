@@ -1,0 +1,16 @@
+main:
+  steps:
+    - try_step:
+        try:
+          steps:
+            - fail:
+                raise:
+                  code: 99
+                  message: "custom error"
+        except:
+          as: e
+          steps:
+            - handle:
+                return:
+                  caught_code: ${e.code}
+                  caught_message: ${e.message}

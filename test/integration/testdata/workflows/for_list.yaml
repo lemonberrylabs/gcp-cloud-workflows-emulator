@@ -1,0 +1,16 @@
+main:
+  steps:
+    - init:
+        assign:
+          - items: [10, 20, 30]
+          - sum: 0
+    - loop:
+        for:
+          value: v
+          in: ${items}
+          steps:
+            - add:
+                assign:
+                  - sum: ${sum + v}
+    - done:
+        return: ${sum}

@@ -1,0 +1,14 @@
+main:
+  steps:
+    - step1:
+        assign:
+          - path: "step1"
+        next: step3
+    - step2:
+        assign:
+          - path: ${path + ",step2"}
+    - step3:
+        assign:
+          - path: ${path + ",step3"}
+    - done:
+        return: ${path}

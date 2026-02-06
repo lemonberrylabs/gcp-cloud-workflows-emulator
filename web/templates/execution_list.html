@@ -1,0 +1,57 @@
+{{define "title"}}Executions: {{.Data.WorkflowID}} - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="breadcrumb">
+    <a href="/ui">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="/ui/workflows">Workflows</a>
+    <span class="sep">/</span>
+    <a href="/ui/workflows/{{.Data.WorkflowID}}">{{.Data.WorkflowID}}</a>
+    <span class="sep">/</span>
+    <span style="color: var(--text);">Executions</span>
+</div>
+
+<div class="page-header">
+    <h1>Executions: {{.Data.WorkflowID}}</h1>
+    <p>All executions for this workflow</p>
+</div>
+
+<div class="card">
+    {{if .Data.Executions}}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Execution ID</th>
+                    <th>State</th>
+                    <th>Started</th>
+                    <th>Duration</th>
+                    <th>Revision</th>
+                    <th>Arguments</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{range .Data.Executions}}
+                <tr>
+                    <td><a href="/ui/executions/{{.WorkflowID}}/{{.ExecID}}" class="wf-link">{{.ExecID}}</a></td>
+                    <td><span class="state {{stateClass (printf "%s" .State)}}"><span class="state-icon">{{stateIcon (printf "%s" .State)}}</span> {{.State}}</span></td>
+                    <td class="td-mono">{{timeAgo .StartTime}}</td>
+                    <td class="td-mono">{{duration .StartTime .EndTime}}</td>
+                    <td class="td-mono">{{.WorkflowRevisionID}}</td>
+                    <td class="td-mono">{{if .Argument}}{{truncate .Argument 40}}{{else}}<span style="color: var(--text-muted);">none</span>{{end}}</td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
+    </div>
+    {{else}}
+    <div class="empty">
+        <div class="empty-icon">&#9654;</div>
+        <h3>No executions</h3>
+        <p>Trigger an execution from the <a href="/ui/workflows/{{.Data.WorkflowID}}">workflow detail page</a></p>
+    </div>
+    {{end}}
+</div>
+
+{{template "foot" .}}

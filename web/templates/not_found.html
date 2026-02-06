@@ -1,0 +1,12 @@
+{{define "title"}}Not Found - GCW Emulator{{end}}
+
+{{template "head" .}}
+
+<div class="empty" style="padding-top: 80px;">
+    <div class="empty-icon" style="font-size: 48px;">&#9888;</div>
+    <h3 style="font-size: 18px;">Not Found</h3>
+    <p>{{.Data.Message}}</p>
+    <p style="margin-top: 16px;"><a href="/ui">Back to Dashboard</a></p>
+</div>
+
+{{template "foot" .}}

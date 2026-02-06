@@ -1,0 +1,15 @@
+main:
+  steps:
+    - call_sub:
+        call: greet
+        args:
+          first_name: "Ada"
+        result: message
+    - done:
+        return: ${message}
+
+greet:
+  params: [first_name, last_name: "Unknown"]
+  steps:
+    - build:
+        return: ${"Hello " + first_name + " " + last_name}

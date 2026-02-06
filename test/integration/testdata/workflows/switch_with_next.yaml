@@ -1,0 +1,15 @@
+main:
+  steps:
+    - init:
+        assign:
+          - x: 5
+    - check:
+        switch:
+          - condition: ${x < 10}
+            next: handle_small
+          - condition: true
+            next: handle_large
+    - handle_small:
+        return: "small"
+    - handle_large:
+        return: "large"

@@ -1,0 +1,18 @@
+main:
+  steps:
+    - compute:
+        assign:
+          - eq: ${5 == 5}
+          - neq: ${5 != 3}
+          - lt: ${3 < 5}
+          - gt: ${5 > 3}
+          - lte: ${5 <= 5}
+          - gte: ${5 >= 5}
+    - done:
+        return:
+          eq: ${eq}
+          neq: ${neq}
+          lt: ${lt}
+          gt: ${gt}
+          lte: ${lte}
+          gte: ${gte}

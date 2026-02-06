@@ -1,0 +1,13 @@
+main:
+  steps:
+    - try_step:
+        try:
+          steps:
+            - fail:
+                raise: "something went wrong"
+        except:
+          as: e
+          steps:
+            - handle:
+                return:
+                  message: ${e.message}
