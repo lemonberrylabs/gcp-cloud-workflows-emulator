@@ -360,6 +360,108 @@ main:
 	}
 }
 
+func TestParseTryInlineCall(t *testing.T) {
+	// GCP Cloud Workflows allows a try block to contain a direct call/args/result
+	// without wrapping in steps. This is common with retry predicates.
+	src := []byte(`
+main:
+  params: [input]
+  steps:
+    - init:
+        assign:
+          - serviceUrl: "https://example.com"
+          - authToken: "tok"
+          - workflow_id: ${input.workflowId}
+          - config: ${input.config}
+    - run_pipeline:
+        try:
+          steps:
+            - generate_domain_research:
+                try:
+                  call: http.post
+                  args:
+                    url: '${serviceUrl + "/api/research"}'
+                    headers:
+                      Content-Type: application/json
+                      x-auth: ${authToken}
+                    body:
+                      config: ${config}
+                      workflowId: ${workflow_id}
+                    timeout: 120
+                  result: domainResearchResult
+                retry:
+                  predicate: ${retry_predicate}
+                  max_retries: 3
+                  backoff:
+                    initial_delay: 2
+                    max_delay: 30
+                    multiplier: 2
+            - use_result:
+                assign:
+                  - output: ${domainResearchResult.body}
+        except:
+          as: e
+          steps:
+            - handle:
+                raise: ${e}
+retry_predicate:
+  params: [e]
+  steps:
+    - check:
+        switch:
+          - condition: ${e.code == 429}
+            return: true
+    - default:
+        return: false
+`)
+
+	wf, err := Parse(src)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// run_pipeline step should have a try block
+	runPipeline := wf.Main.Steps[1]
+	if runPipeline.Try == nil {
+		t.Fatal("run_pipeline: try is nil")
+	}
+	if len(runPipeline.Try.Try) != 2 {
+		t.Fatalf("expected 2 try steps in run_pipeline, got %d", len(runPipeline.Try.Try))
+	}
+
+	// generate_domain_research should have an inline try (call without steps wrapper)
+	genStep := runPipeline.Try.Try[0]
+	if genStep.Try == nil {
+		t.Fatal("generate_domain_research: try is nil")
+	}
+	if len(genStep.Try.Try) != 1 {
+		t.Fatalf("expected 1 inline try step, got %d", len(genStep.Try.Try))
+	}
+	inlineStep := genStep.Try.Try[0]
+	if inlineStep.Call == nil {
+		t.Fatal("inline try step: call is nil")
+	}
+	if inlineStep.Call.Function != "http.post" {
+		t.Errorf("expected call function 'http.post', got %q", inlineStep.Call.Function)
+	}
+	if inlineStep.Call.Result != "domainResearchResult" {
+		t.Errorf("expected result 'domainResearchResult', got %q", inlineStep.Call.Result)
+	}
+
+	// retry should be parsed
+	if genStep.Try.Retry == nil {
+		t.Fatal("generate_domain_research: retry is nil")
+	}
+	if genStep.Try.Retry.MaxRetries != 3 {
+		t.Errorf("expected max_retries 3, got %d", genStep.Try.Retry.MaxRetries)
+	}
+
+	// retry_predicate subworkflow should exist
+	if _, ok := wf.Subworkflows["retry_predicate"]; !ok {
+		t.Fatal("retry_predicate subworkflow not found")
+	}
+}
+
 func TestParseRaiseStep(t *testing.T) {
 	src := []byte(`
 main:

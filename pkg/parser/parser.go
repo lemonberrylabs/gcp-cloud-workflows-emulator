@@ -650,11 +650,13 @@ func parseTrySteps(node *yaml.Node, loc string) ([]*ast.Step, error) {
 				return parseSteps(node.Content[i+1], loc+" (try)")
 			}
 		}
-		// If no steps key, try to parse as inline step
-		return nil, &ParseError{
-			Message:  "try block must contain 'steps'",
-			Location: loc,
+		// No 'steps' key — treat as an inline step body (e.g. call/args/result directly).
+		// GCP Cloud Workflows allows try blocks to contain a single step without a steps wrapper.
+		inlineStep, err := parseStep("try_inline", node, loc+" (try)")
+		if err != nil {
+			return nil, err
 		}
+		return []*ast.Step{inlineStep}, nil
 	}
 	if node.Kind == yaml.SequenceNode {
 		return parseSteps(node, loc+" (try)")
