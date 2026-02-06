@@ -337,6 +337,10 @@ docker run -p 8787:8787 \
 - [x] 20 max concurrent branches/iterations
 - [x] 100,000 max steps per execution
 
+## FAQ
+
+See the [FAQ](https://lemonberrylabs.github.io/gcp-cloud-workflows-emulator/other/faq.html) for common questions, including how to work around unsupported Google Cloud native functions (e.g., Secret Manager) using environment variables and conditional execution.
+
 ## Limitations
 
 The following are **not** supported:

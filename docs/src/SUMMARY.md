@@ -30,6 +30,7 @@
 
 # Other
 
+- [FAQ](./other/faq.md)
 - [Limitations](./other/limitations.md)
 - [Troubleshooting](./other/troubleshooting.md)
 - [Contributing](./other/contributing.md)
