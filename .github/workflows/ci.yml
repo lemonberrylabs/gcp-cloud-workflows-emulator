@@ -27,12 +27,14 @@ jobs:
 
       - name: Start Emulator
         run: |
-          PORT=8787 go run ./cmd/emulator/ &
+          go build -o ./gcw-emulator ./cmd/emulator
+          PORT=8787 ./gcw-emulator &
           for i in $(seq 1 30); do
-            if curl -s -o /dev/null http://localhost:8787/; then
+            if curl -s -o /dev/null -w '%{http_code}' http://localhost:8787/v1/projects/my-project/locations/us-central1/workflows 2>/dev/null | grep -q '200'; then
               echo "Emulator ready"
               break
             fi
+            echo "Waiting for emulator... ($i)"
             sleep 1
           done
 
