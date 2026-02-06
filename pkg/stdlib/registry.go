@@ -49,19 +49,6 @@ func (r *Registry) Register(name string, fn StdlibFunc) {
 	r.funcs[name] = fn
 }
 
-// getMapArg extracts a named argument from a single map argument.
-// GCW call steps pass args as a single map.
-func getMapArg(args []types.Value, name string) (types.Value, bool) {
-	if len(args) == 0 {
-		return types.Null, false
-	}
-	if args[0].Type() == types.TypeMap {
-		v, ok := args[0].AsMap().Get(name)
-		return v, ok
-	}
-	return types.Null, false
-}
-
 // requireArgs checks that the number of args is in range.
 func requireArgs(name string, args []types.Value, min, max int) error {
 	if len(args) < min || len(args) > max {
