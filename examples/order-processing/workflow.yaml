@@ -1,0 +1,46 @@
+main:
+  params: [args]
+  steps:
+    - validate_order:
+        call: http.post
+        args:
+          url: ${args.serviceUrl + "/steps/validate"}
+          body:
+            orderId: ${args.order.id}
+            items: ${args.order.items}
+        result: validation
+
+    - check_validation:
+        switch:
+          - condition: ${not(validation.body.valid)}
+            raise:
+              code: 400
+              message: ${validation.body.error}
+
+    - process_payment:
+        call: http.post
+        args:
+          url: ${args.serviceUrl + "/steps/charge"}
+          body:
+            orderId: ${args.order.id}
+            amount: ${validation.body.total}
+        result: payment
+
+    - send_confirmation:
+        call: http.post
+        args:
+          url: ${args.serviceUrl + "/steps/confirm"}
+          body:
+            orderId: ${args.order.id}
+            email: ${args.order.customer.email}
+            transactionId: ${payment.body.transactionId}
+            total: ${validation.body.total}
+        result: confirmation
+
+    - return_result:
+        return:
+          orderId: ${args.order.id}
+          status: "completed"
+          total: ${validation.body.total}
+          transactionId: ${payment.body.transactionId}
+          confirmationSent: ${confirmation.body.sent}
