@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	longrunningpb "cloud.google.com/go/longrunning/autogen/longrunningpb"
@@ -168,10 +169,7 @@ func (s *Server) DeleteWorkflow(ctx context.Context, req *workflowspb.DeleteWork
 	parts := strings.Split(name, "/")
 	wfID := parts[len(parts)-1]
 
-	return &longrunningpb.Operation{
-		Name: fmt.Sprintf("projects/-/locations/-/operations/delete-%s", wfID),
-		Done: true,
-	}, nil
+	return doneOperation("delete-"+wfID, &emptypb.Empty{})
 }
 
 // --- Executions Service ---
