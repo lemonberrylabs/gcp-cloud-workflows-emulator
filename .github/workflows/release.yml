@@ -29,7 +29,7 @@ jobs:
         run: |
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags="-s -w" -o "gcw-emulator-${GOOS}-${GOARCH}${EXT}" ./cmd/emulator/
+          go build -ldflags="-s -w" -o "gcw-emulator-${GOOS}-${GOARCH}${EXT}" ./cmd/gcw-emulator/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

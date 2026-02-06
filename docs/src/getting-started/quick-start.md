@@ -26,7 +26,7 @@ main:
 ## 2. Start the emulator
 
 ```bash
-emulator --workflows-dir=./workflows --port=8787
+gcw-emulator --workflows-dir=./workflows
 ```
 
 You should see:

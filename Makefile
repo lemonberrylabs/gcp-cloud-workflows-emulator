@@ -4,7 +4,7 @@ IMAGE_NAME ?= gcw-emulator
 IMAGE_TAG  ?= latest
 
 build:
-	go build -o bin/gcw-emulator ./cmd/emulator
+	go build -o bin/gcw-emulator ./cmd/gcw-emulator
 
 run: build
 	./bin/gcw-emulator

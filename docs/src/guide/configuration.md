@@ -3,7 +3,7 @@
 ## Starting the emulator
 
 ```bash
-emulator
+gcw-emulator
 ```
 
 By default the emulator starts on port 8787 with no workflows loaded. Deploy workflows via the REST API.
@@ -11,7 +11,7 @@ By default the emulator starts on port 8787 with no workflows loaded. Deploy wor
 ### With a workflows directory
 
 ```bash
-emulator --workflows-dir=./workflows --port=9090
+gcw-emulator --workflows-dir=./workflows --port=9090
 ```
 
 This loads all `.yaml` and `.json` files from the directory and watches for changes.

@@ -32,7 +32,7 @@
 ### Install
 
 ```bash
-go install github.com/lemonberrylabs/gcp-cloud-workflows-emulator/cmd/emulator@latest
+go install github.com/lemonberrylabs/gcp-cloud-workflows-emulator/cmd/gcw-emulator@latest
 ```
 
 ### Create a workflow
@@ -53,7 +53,7 @@ main:
 ### Start the emulator
 
 ```bash
-emulator --workflows-dir=./workflows
+gcw-emulator --workflows-dir=./workflows
 ```
 
 The emulator starts on port **8787** by default (REST) and **8788** (gRPC). Edit a workflow file and it's redeployed automatically.
@@ -93,7 +93,7 @@ Browse to [http://localhost:8787/ui/](http://localhost:8787/ui/) to see deployed
 All environment variables can also be set via CLI flags:
 
 ```bash
-emulator --port=9090 --grpc-port=9091 --project=my-project --location=us-central1 --workflows-dir=./workflows
+gcw-emulator --port=9090 --grpc-port=9091 --project=my-project --location=us-central1 --workflows-dir=./workflows
 ```
 
 CLI flags take precedence over environment variables.
@@ -364,7 +364,7 @@ Contributions are welcome.
 Start the emulator:
 
 ```bash
-go run ./cmd/emulator
+go run ./cmd/gcw-emulator
 ```
 
 In another terminal:
@@ -377,7 +377,7 @@ WORKFLOWS_EMULATOR_HOST=http://localhost:8787 go test -v ./...
 ### Project Structure
 
 ```
-cmd/emulator/       Entry point (CLI)
+cmd/gcw-emulator/   Entry point (CLI)
 pkg/api/            REST API handlers
 pkg/ast/            Workflow AST types
 pkg/expr/           Expression parser and evaluator

@@ -9,7 +9,7 @@ RUN go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /gcw-emulator ./cmd/emulator
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /gcw-emulator ./cmd/gcw-emulator
 
 # Stage 2: Minimal runtime image
 FROM alpine:3.19

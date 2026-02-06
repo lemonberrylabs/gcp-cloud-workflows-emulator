@@ -40,7 +40,7 @@ This matches the real GCW behavior where each execution is pinned to a specific 
 
 ```bash
 # Start with a workflows directory
-emulator --workflows-dir=./workflows
+gcw-emulator --workflows-dir=./workflows
 
 # In another terminal, add a new workflow
 cat > workflows/process-order.yaml << 'EOF'

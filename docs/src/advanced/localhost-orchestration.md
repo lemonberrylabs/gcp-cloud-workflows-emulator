@@ -83,7 +83,7 @@ main:
 ## Testing the full flow
 
 1. Start your services locally on different ports
-2. Start the emulator: `emulator --workflows-dir=./workflows`
+2. Start the emulator: `gcw-emulator --workflows-dir=./workflows`
 3. Trigger an execution via the API
 4. The emulator calls your services in order, passing data between them
 5. Check the execution result

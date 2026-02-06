@@ -115,7 +115,7 @@ main:
 Start the emulator in one terminal:
 
 ```bash
-go run ./cmd/emulator
+go run ./cmd/gcw-emulator
 ```
 
 Run your tests in another:

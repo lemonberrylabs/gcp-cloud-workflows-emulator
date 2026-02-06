@@ -18,7 +18,7 @@ Contributions are welcome. This guide covers the basics of contributing to the p
 ## Building
 
 ```bash
-go build ./cmd/emulator
+go build ./cmd/gcw-emulator
 ```
 
 ## Running tests
@@ -34,7 +34,7 @@ go test ./pkg/...
 Start the emulator:
 
 ```bash
-go run ./cmd/emulator
+go run ./cmd/gcw-emulator
 ```
 
 In another terminal:
@@ -49,7 +49,7 @@ The integration test suite has 221 tests covering all step types, standard libra
 ## Project structure
 
 ```
-cmd/emulator/       Entry point (CLI)
+cmd/gcw-emulator/   Entry point (CLI)
 pkg/
   api/              REST API handlers (Fiber)
   ast/              Workflow AST types
