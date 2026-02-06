@@ -2,7 +2,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -13,45 +12,69 @@ import (
 	grpcapi "github.com/lemonberrylabs/gcp-cloud-workflows-emulator/pkg/api/grpc"
 	"github.com/lemonberrylabs/gcp-cloud-workflows-emulator/pkg/store"
 	"github.com/lemonberrylabs/gcp-cloud-workflows-emulator/web"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	portFlag := flag.Int("port", 0, "HTTP server port (default 8787, env PORT)")
-	grpcPortFlag := flag.Int("grpc-port", 0, "gRPC server port (default 8788, env GRPC_PORT)")
-	hostFlag := flag.String("host", "", "Bind address (default 0.0.0.0, env HOST)")
-	projectFlag := flag.String("project", "", "GCP project ID for API paths (default my-project, env PROJECT)")
-	locationFlag := flag.String("location", "", "GCP location for API paths (default us-central1, env LOCATION)")
-	workflowsDirFlag := flag.String("workflows-dir", "", "Directory of workflow YAML/JSON files to watch (env WORKFLOWS_DIR)")
-	flag.Parse()
+// Set via -ldflags at build time.
+var (
+	version = "dev"
+	commit  = "unknown"
+	date    = "unknown"
+)
 
+var rootCmd = &cobra.Command{
+	Use:   "gcw-emulator",
+	Short: "GCP Cloud Workflows Emulator",
+	RunE:  run,
+}
+
+func init() {
+	rootCmd.Version = version + " (commit=" + commit + ", built=" + date + ")"
+	rootCmd.SetVersionTemplate("gcw-emulator version {{.Version}}\n")
+
+	rootCmd.Flags().Int("port", 0, "HTTP server port (default 8787, env PORT)")
+	rootCmd.Flags().Int("grpc-port", 0, "gRPC server port (default 8788, env GRPC_PORT)")
+	rootCmd.Flags().String("host", "", "Bind address (default 0.0.0.0, env HOST)")
+	rootCmd.Flags().String("project", "", "GCP project ID for API paths (default my-project, env PROJECT)")
+	rootCmd.Flags().String("location", "", "GCP location for API paths (default us-central1, env LOCATION)")
+	rootCmd.Flags().String("workflows-dir", "", "Directory of workflow YAML/JSON files to watch (env WORKFLOWS_DIR)")
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func run(cmd *cobra.Command, args []string) error {
 	port := envOrDefault("PORT", "8787")
-	if *portFlag != 0 {
-		port = fmt.Sprintf("%d", *portFlag)
+	if v, _ := cmd.Flags().GetInt("port"); v != 0 {
+		port = fmt.Sprintf("%d", v)
 	}
 
 	grpcPort := envOrDefault("GRPC_PORT", "8788")
-	if *grpcPortFlag != 0 {
-		grpcPort = fmt.Sprintf("%d", *grpcPortFlag)
+	if v, _ := cmd.Flags().GetInt("grpc-port"); v != 0 {
+		grpcPort = fmt.Sprintf("%d", v)
 	}
 
 	host := envOrDefault("HOST", "0.0.0.0")
-	if *hostFlag != "" {
-		host = *hostFlag
+	if v, _ := cmd.Flags().GetString("host"); v != "" {
+		host = v
 	}
 
 	project := envOrDefault("PROJECT", "my-project")
-	if *projectFlag != "" {
-		project = *projectFlag
+	if v, _ := cmd.Flags().GetString("project"); v != "" {
+		project = v
 	}
 
 	location := envOrDefault("LOCATION", "us-central1")
-	if *locationFlag != "" {
-		location = *locationFlag
+	if v, _ := cmd.Flags().GetString("location"); v != "" {
+		location = v
 	}
 
 	workflowsDir := os.Getenv("WORKFLOWS_DIR")
-	if *workflowsDirFlag != "" {
-		workflowsDir = *workflowsDirFlag
+	if v, _ := cmd.Flags().GetString("workflows-dir"); v != "" {
+		workflowsDir = v
 	}
 
 	addr := fmt.Sprintf("%s:%s", host, port)
@@ -106,9 +129,7 @@ func main() {
 	} else {
 		log.Printf("API-only mode (no --workflows-dir specified)")
 	}
-	if err := server.Listen(addr); err != nil {
-		log.Fatalf("Server error: %v", err)
-	}
+	return server.Listen(addr)
 }
 
 func envOrDefault(key, fallback string) string {

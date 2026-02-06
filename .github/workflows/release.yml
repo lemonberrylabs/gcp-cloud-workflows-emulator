@@ -29,7 +29,11 @@ jobs:
         run: |
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
-          go build -ldflags="-s -w" -o "gcw-emulator-${GOOS}-${GOARCH}${EXT}" ./cmd/gcw-emulator/
+          VERSION="${GITHUB_REF_NAME}"
+          COMMIT="${GITHUB_SHA::7}"
+          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          LDFLAGS="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+          go build -ldflags="${LDFLAGS}" -o "gcw-emulator-${GOOS}-${GOARCH}${EXT}" ./cmd/gcw-emulator/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
