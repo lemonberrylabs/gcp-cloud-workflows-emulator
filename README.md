@@ -1,9 +1,18 @@
-# GCP Cloud Workflows Emulator
+<p align="center">
+  <img src="assets/logo.png" alt="GCW Emulator" width="400">
+</p>
 
-A local emulator for [Google Cloud Workflows](https://cloud.google.com/workflows) that lets you run and test workflows without deploying to GCP.
+<h1 align="center">GCP Cloud Workflows Emulator</h1>
 
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+<p align="center">
+  A local emulator for <a href="https://cloud.google.com/workflows">Google Cloud Workflows</a> that lets you run and test workflows without deploying to GCP.
+</p>
+
+<p align="center">
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white" alt="Go"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License"></a>
+  <a href="https://github.com/lemonberrylabs/gcp-cloud-workflows-emulator/actions/workflows/ci.yml"><img src="https://github.com/lemonberrylabs/gcp-cloud-workflows-emulator/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
 
 ## Features
 
