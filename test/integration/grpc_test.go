@@ -28,7 +28,7 @@ func grpcEndpoint() string {
 	if ep := os.Getenv("GCW_GRPC_ENDPOINT"); ep != "" {
 		return ep
 	}
-	return "localhost:8081"
+	return "localhost:8788"
 }
 
 // grpcClientOptions returns the common options for connecting official Google
