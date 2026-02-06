@@ -1,7 +1,7 @@
 # Binaries
 bin/
-emulator
-gcw-emulator
+/emulator
+/gcw-emulator
 *.exe
 *.dll
 *.so
