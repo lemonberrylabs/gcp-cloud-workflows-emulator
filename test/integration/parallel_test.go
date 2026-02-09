@@ -358,6 +358,29 @@ main:
 	assertResultContains(t, er, "x_value", float64(0))
 }
 
+// TestParallel_NestedForLoopsComplexPipeline verifies that a complex workflow
+// with parallel nesting depth 2 (parallel-for inside parallel-for) succeeds
+// when multiple outer iterations run concurrently. This is a regression test
+// for a bug where parallel depth was tracked via a shared counter on the
+// Engine struct, causing concurrent inner parallels to race and falsely
+// exceed the nesting limit.
+func TestParallel_NestedForLoopsComplexPipeline(t *testing.T) {
+	yaml := loadWorkflow(t, "parallel_nested_pipeline.yaml")
+	args := map[string]interface{}{
+		"workflowId": "test-wf-123",
+		"itemId":     "item-456",
+		"config": map[string]interface{}{
+			"enablePreview": true,
+		},
+	}
+	er := deployAndRun(t, uniqueID("par-nested-pipeline"), yaml, args)
+	assertSucceeded(t, er)
+	assertResultContains(t, er, "status", "complete")
+	assertResultContains(t, er, "workflowId", "test-wf-123")
+	assertResultContains(t, er, "itemId", "item-456")
+	assertResultContains(t, er, "outputPath", "/output/final")
+}
+
 // TestParallel_NonSharedVariableIsolation verifies that non-shared variables
 // are isolated between parallel branches.
 func TestParallel_NonSharedVariableIsolation(t *testing.T) {

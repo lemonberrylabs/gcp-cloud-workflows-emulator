@@ -1,0 +1,324 @@
+# Regression test: complex pipeline with parallel-for nesting depth 2.
+#
+# Structure mirrors a real-world GCP Cloud Workflows pipeline:
+#   - Init with conditional token refresh (switch with nested steps)
+#   - Outer try/except wrapping the full pipeline
+#   - Sequential stages with try/retry
+#   - Parallel for (level 1) over groups, each containing:
+#       * Parallel for (level 2) over tasks within the group
+#       * Sequential post-processing steps: try/except, switch, try/except
+#   - Error reporting in except with nested try/except
+#   - Subworkflow retry predicates
+#
+# This must succeed: structural parallel nesting is exactly 2 (the GCP max).
+
+main:
+  params: [input]
+  steps:
+    - init:
+        assign:
+          - workflow_id: ${input.workflowId}
+          - item_id: ${input.itemId}
+          - config: ${input.config}
+          - base_url: "http://api.example.com"
+          - auth_token: "default-token"
+    - maybe_refresh_token:
+        switch:
+          - condition: '${auth_token == ""}'
+            steps:
+              - fetch_token:
+                  assign:
+                    - token_response: "refreshed-token"
+              - set_token:
+                  assign:
+                    - auth_token: ${token_response}
+    - run_pipeline:
+        try:
+          steps:
+            - stage_analyze:
+                try:
+                  steps:
+                    - do_analyze:
+                        assign:
+                          - analyze_result:
+                              data: "analysis_complete"
+                              score: 42
+                retry:
+                  predicate: ${retry_handler}
+                  max_retries: 3
+                  backoff:
+                    initial_delay: 1
+                    max_delay: 10
+                    multiplier: 2
+            - update_after_analyze:
+                assign:
+                  - pipeline_progress: 0.1
+                  - pipeline_stage: "scoping"
+            - stage_scope:
+                try:
+                  steps:
+                    - do_scope:
+                        assign:
+                          - scope_result:
+                              filtered: true
+                              count: 8
+                retry:
+                  predicate: ${retry_handler}
+                  max_retries: 3
+                  backoff:
+                    initial_delay: 1
+                    max_delay: 10
+                    multiplier: 2
+            - update_after_scope:
+                assign:
+                  - pipeline_progress: 0.15
+                  - pipeline_stage: "planning"
+            - stage_plan:
+                try:
+                  steps:
+                    - do_plan:
+                        assign:
+                          - plan_result:
+                              totalTasks: 4
+                              itemName: "Test Item"
+                              groups:
+                                - id: "grp-alpha"
+                                  name: "Alpha Group"
+                                  tasks:
+                                    - id: "task-a1"
+                                      label: "Alpha Task 1"
+                                    - id: "task-a2"
+                                      label: "Alpha Task 2"
+                                - id: "grp-beta"
+                                  name: "Beta Group"
+                                  tasks:
+                                    - id: "task-b1"
+                                      label: "Beta Task 1"
+                                    - id: "task-b2"
+                                      label: "Beta Task 2"
+                retry:
+                  predicate: ${retry_handler}
+                  max_retries: 3
+                  backoff:
+                    initial_delay: 1
+                    max_delay: 10
+                    multiplier: 2
+            - update_after_plan:
+                assign:
+                  - pipeline_progress: 0.2
+                  - pipeline_stage: "processing"
+                  - total_groups: ${len(plan_result.groups)}
+            - compute_deltas:
+                assign:
+                  - group_delta: ${0.75 / len(plan_result.groups)}
+            - check_optional_feature:
+                switch:
+                  - condition: ${config.enablePreview == true}
+                    steps:
+                      - do_preview:
+                          try:
+                            steps:
+                              - generate_preview:
+                                  assign:
+                                    - preview_result:
+                                        url: '${"http://cdn.example.com/preview/" + plan_result.itemName}'
+                          retry:
+                            predicate: ${retry_handler_lenient}
+                            max_retries: 3
+                            backoff:
+                              initial_delay: 1
+                              max_delay: 10
+                              multiplier: 2
+                          except:
+                            as: e
+                            steps:
+                              - log_preview_error:
+                                  call: sys.log
+                                  args:
+                                    severity: WARNING
+                                    text: '${"Preview generation failed: " + e.message}'
+            - process_all_groups:
+                parallel:
+                  for:
+                    value: group
+                    index: groupIndex
+                    in: ${plan_result.groups}
+                    steps:
+                      - process_group_tasks:
+                          parallel:
+                            for:
+                              value: task
+                              index: taskIndex
+                              in: ${group.tasks}
+                              steps:
+                                - handle_task:
+                                    try:
+                                      steps:
+                                        - do_handle_task:
+                                            assign:
+                                              - task_output:
+                                                  taskId: ${task.id}
+                                                  groupId: ${group.id}
+                                                  status: "completed"
+                                    retry:
+                                      predicate: ${retry_handler}
+                                      max_retries: 3
+                                      backoff:
+                                        initial_delay: 1
+                                        max_delay: 10
+                                        multiplier: 2
+                                - enrich_task:
+                                    try:
+                                      steps:
+                                        - do_enrich:
+                                            assign:
+                                              - enrich_output:
+                                                  taskId: ${task.id}
+                                                  enriched: true
+                                    retry:
+                                      predicate: ${retry_handler_lenient}
+                                      max_retries: 3
+                                      backoff:
+                                        initial_delay: 1
+                                        max_delay: 10
+                                        multiplier: 2
+                                    except:
+                                      as: e
+                                      steps:
+                                        - log_enrich_error:
+                                            call: sys.log
+                                            args:
+                                              severity: WARNING
+                                              text: '${"Enrichment failed for " + task.id + ": " + e.message}'
+                      - notify_group_complete:
+                          try:
+                            steps:
+                              - do_notify:
+                                  assign:
+                                    - notification:
+                                        groupId: ${group.id}
+                                        taskCount: ${len(group.tasks)}
+                          except:
+                            as: notify_err
+                            steps:
+                              - log_notify_error:
+                                  call: sys.log
+                                  args:
+                                    severity: WARNING
+                                    text: '${"Failed to notify group complete for " + group.id + ": " + notify_err.message}'
+                      - check_special_group:
+                          switch:
+                            - condition: ${groupIndex == 0 or groupIndex == len(plan_result.groups) - 1}
+                              steps:
+                                - do_special:
+                                    try:
+                                      steps:
+                                        - run_special:
+                                            assign:
+                                              - special_output:
+                                                  groupId: ${group.id}
+                                                  groupName: ${group.name}
+                                                  isSpecial: true
+                                    retry:
+                                      predicate: ${retry_handler}
+                                      max_retries: 3
+                                      backoff:
+                                        initial_delay: 1
+                                        max_delay: 10
+                                        multiplier: 2
+                      - update_group_progress:
+                          try:
+                            steps:
+                              - do_progress_update:
+                                  assign:
+                                    - group_progress:
+                                        message: "Processing..."
+                                        delta: ${group_delta}
+                          except:
+                            as: progress_err
+                            steps:
+                              - log_progress_error:
+                                  call: sys.log
+                                  args:
+                                    severity: WARNING
+                                    text: '${"Failed to update progress: " + progress_err.message}'
+            - update_finalizing:
+                assign:
+                  - pipeline_progress: 0.95
+                  - pipeline_stage: "finalizing"
+            - do_finalize:
+                try:
+                  steps:
+                    - run_finalize:
+                        assign:
+                          - final_result:
+                              itemId: ${item_id}
+                              outputPath: "/output/final"
+                retry:
+                  predicate: ${retry_handler}
+                  max_retries: 3
+                  backoff:
+                    initial_delay: 1
+                    max_delay: 10
+                    multiplier: 2
+            - update_done:
+                assign:
+                  - pipeline_progress: 1.0
+                  - pipeline_stage: "complete"
+            - return_result:
+                return:
+                  status: complete
+                  outputPath: ${final_result.outputPath}
+                  itemId: ${final_result.itemId}
+                  workflowId: ${workflow_id}
+        except:
+          as: e
+          steps:
+            - try_report_failure:
+                try:
+                  steps:
+                    - report_failure:
+                        assign:
+                          - failure_report:
+                              status: failed
+                              error: ${e.message}
+                except:
+                  as: report_error
+                  steps:
+                    - log_report_error:
+                        call: sys.log
+                        args:
+                          severity: ERROR
+                          text: '${"Failed to report pipeline error: " + report_error.message}'
+            - propagate_error:
+                raise: ${e}
+retry_handler:
+  params: [e]
+  steps:
+    - check_retryable:
+        switch:
+          - condition: '${"tags" in e and "TimeoutError" in e.tags}'
+            return: true
+          - condition: '${"tags" in e and "ConnectionError" in e.tags}'
+            return: true
+          - condition: '${default(map.get(e, "code"), 0) == 429}'
+            return: true
+          - condition: '${default(map.get(e, "code"), 0) == 503}'
+            return: true
+          - condition: '${default(map.get(e, "code"), 0) == 504}'
+            return: true
+    - not_retryable:
+        return: false
+retry_handler_lenient:
+  params: [e]
+  steps:
+    - check_retryable:
+        switch:
+          - condition: '${"tags" in e and "TimeoutError" in e.tags}'
+            return: true
+          - condition: '${"tags" in e and "ConnectionError" in e.tags}'
+            return: true
+          - condition: '${default(map.get(e, "code"), 0) == 429}'
+            return: true
+    - not_retryable:
+        return: false

@@ -39,11 +39,28 @@ type Engine struct {
 	workflow *ast.Workflow
 	funcs    FunctionRegistry
 
-	mu            sync.Mutex
-	stepCount     int
-	callDepth     int
-	parallelDepth int
-	cancelled     bool
+	mu        sync.Mutex
+	stepCount int
+	callDepth int
+	cancelled bool
+}
+
+// contextKey is an unexported type for context keys defined in this package.
+type contextKey string
+
+// parallelDepthKey is the context key for tracking parallel nesting depth
+// per execution path. Using context (rather than a shared counter on Engine)
+// ensures that sibling goroutines spawned by the same parallel step each
+// see the correct structural nesting depth.
+const parallelDepthKey contextKey = "parallelDepth"
+
+// parallelDepthFromCtx returns the current parallel nesting depth stored
+// in ctx. Returns 0 when no parallel step is active.
+func parallelDepthFromCtx(ctx context.Context) int {
+	if v, ok := ctx.Value(parallelDepthKey).(int); ok {
+		return v
+	}
+	return 0
 }
 
 // NewEngine creates a new workflow execution engine.
@@ -667,21 +684,14 @@ const MaxParallelNestingDepth = 2
 
 // executeParallel executes a parallel step.
 func (e *Engine) executeParallel(ctx context.Context, p *ast.ParallelExpr, scope *VariableScope) error {
-	e.mu.Lock()
-	e.parallelDepth++
-	depth := e.parallelDepth
-	e.mu.Unlock()
-
-	defer func() {
-		e.mu.Lock()
-		e.parallelDepth--
-		e.mu.Unlock()
-	}()
-
+	depth := parallelDepthFromCtx(ctx) + 1
 	if depth > MaxParallelNestingDepth {
 		return types.NewParallelNestingError(
 			fmt.Sprintf("parallel nesting depth %d exceeds maximum of %d", depth, MaxParallelNestingDepth))
 	}
+
+	// Propagate the incremented depth to child goroutines via context.
+	ctx = context.WithValue(ctx, parallelDepthKey, depth)
 
 	if p.Branches != nil {
 		return e.executeParallelBranches(ctx, p, scope)
