@@ -14,6 +14,15 @@
   <a href="https://github.com/lemonberrylabs/gcw-emulator/actions/workflows/ci.yml"><img src="https://github.com/lemonberrylabs/gcw-emulator/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
+<p align="center">
+  <b><a href="https://lemonberrylabs.github.io/gcw-emulator">Documentation</a></b> &nbsp;&bull;&nbsp;
+  <a href="https://lemonberrylabs.github.io/gcw-emulator/getting-started/installation.html">Installation</a> &nbsp;&bull;&nbsp;
+  <a href="https://lemonberrylabs.github.io/gcw-emulator/other/faq.html">FAQ</a> &nbsp;&bull;&nbsp;
+  <a href="https://github.com/lemonberrylabs/gcw-emulator/issues">Issues</a>
+</p>
+
+---
+
 ## Features
 
 - **Full REST API compatibility** -- same endpoints, same request/response formats as Google Cloud Workflows and Executions APIs
@@ -355,13 +364,9 @@ The following are **not** supported:
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-change`)
-3. Write tests for your changes
-4. Ensure all tests pass: `go test ./...`
-5. Submit a pull request
+Every bug fix and feature must include tests -- both unit tests (`pkg/`) and integration tests (`test/integration/`). PRs without adequate test coverage will not be merged.
 
 ### Running Integration Tests
 
