@@ -318,6 +318,21 @@ func (s *Store) GetCallback(callbackURL string) (*Callback, error) {
 	return cb, nil
 }
 
+// FindWorkflowByID searches for a workflow by its short ID suffix
+// (e.g., "my-workflow" matches "projects/p/locations/l/workflows/my-workflow").
+func (s *Store) FindWorkflowByID(workflowID string) (*Workflow, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	suffix := "/workflows/" + workflowID
+	for name, wf := range s.workflows {
+		if len(name) >= len(suffix) && name[len(name)-len(suffix):] == suffix {
+			return wf, nil
+		}
+	}
+	return nil, fmt.Errorf("workflow with id '%s' not found", workflowID)
+}
+
 // ListCallbacks returns all callbacks for an execution.
 func (s *Store) ListCallbacks(executionName string) []*Callback {
 	s.mu.RLock()

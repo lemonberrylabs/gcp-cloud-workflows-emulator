@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"github.com/lemonberrylabs/gcw-emulator/pkg/ast"
@@ -164,8 +165,10 @@ func (e *Engine) executeSteps(ctx context.Context, steps []*ast.Step, scope *Var
 		e.mu.Unlock()
 
 		step := steps[i]
+		log.Printf("[DEBUG] Executing step: %s", step.Name)
 		result, err := e.executeStep(ctx, step, scope)
 		if err != nil {
+			log.Printf("[ERROR] Step %s failed: %v", step.Name, err)
 			return StepResult{}, err
 		}
 

@@ -345,8 +345,11 @@ func (s *Server) createExecution(c *fiber.Ctx) error {
 }
 
 func (s *Server) runExecution(execName string, wfAST *ast.Workflow, args types.Value) {
+	log.Printf("[DEBUG] Starting execution: %s", execName)
+
 	funcs := stdlib.NewRegistry()
 	funcs.RegisterHTTP(&http.Client{Timeout: 30 * time.Second})
+	funcs.RegisterWorkflowExecution(&storeAdapter{s.store}, s.parsed, s.childExecutor())
 
 	engine := runtime.NewEngine(wfAST, funcs)
 
@@ -359,10 +362,41 @@ func (s *Server) runExecution(execName string, wfAST *ast.Workflow, args types.V
 	delete(s.engines, execName)
 
 	if err != nil {
+		log.Printf("[ERROR] Execution %s failed: %v", execName, err)
 		_ = s.store.FailExecution(execName, err)
 	} else {
+		log.Printf("[DEBUG] Execution %s completed successfully", execName)
 		_ = s.store.CompleteExecution(execName, result)
 	}
+}
+
+// childExecutor returns a ChildExecutor that creates a fresh engine for each
+// child workflow execution, with all stdlib functions registered.
+func (s *Server) childExecutor() stdlib.ChildExecutor {
+	return func(wfAST *ast.Workflow, args types.Value) (types.Value, error) {
+		funcs := stdlib.NewRegistry()
+		funcs.RegisterHTTP(&http.Client{Timeout: 30 * time.Second})
+		funcs.RegisterWorkflowExecution(&storeAdapter{s.store}, s.parsed, s.childExecutor())
+
+		engine := runtime.NewEngine(wfAST, funcs)
+		return engine.Execute(context.Background(), args)
+	}
+}
+
+// storeAdapter adapts *store.Store to the stdlib.WorkflowStore interface.
+type storeAdapter struct {
+	s *store.Store
+}
+
+func (a *storeAdapter) FindWorkflowByID(workflowID string) (stdlib.WorkflowInfo, error) {
+	wf, err := a.s.FindWorkflowByID(workflowID)
+	if err != nil {
+		return stdlib.WorkflowInfo{}, err
+	}
+	return stdlib.WorkflowInfo{
+		Name:       wf.Name,
+		SourceCode: wf.SourceCode,
+	}, nil
 }
 
 func (s *Server) getExecution(c *fiber.Ctx) error {
